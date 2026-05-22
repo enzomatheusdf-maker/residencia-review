@@ -1,123 +1,355 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="antialiased dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MedRev</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>MedRev · FSRS 4.5</title>
 
-  <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <span class="brand-mark">M</span>
+  <!-- PWA -->
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f2f4f7">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MedRev">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { DEFAULT: '#3b82f6', dim: 'rgba(59,130,246,0.15)', ring: 'rgba(59,130,246,0.35)' }
+          },
+          fontFamily: { sans: ['"Inter"', 'sans-serif'] },
+          animation: {
+            'scale-in': 'scaleIn 0.2s cubic-bezier(0.16,1,0.3,1) forwards',
+            'slide-up': 'slideUp 0.35s cubic-bezier(0.16,1,0.3,1) forwards',
+            'fade-in':  'fadeIn 0.2s ease-out forwards',
+          },
+          keyframes: {
+            scaleIn:  { '0%':{ transform:'scale(0.96)', opacity:'0' }, '100%':{ transform:'scale(1)', opacity:'1' } },
+            slideUp:  { '0%':{ transform:'translateY(18px)', opacity:'0' }, '100%':{ transform:'translateY(0)', opacity:'1' } },
+            fadeIn:   { '0%':{ opacity:'0' }, '100%':{ opacity:'1' } },
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --glass-border: rgba(255,255,255,0.4);
+      --glass-bg:     rgba(255,255,255,0.65);
+      --accent:       #3b82f6;
+    }
+    .dark {
+      --glass-border: rgba(255,255,255,0.08);
+      --glass-bg:     rgba(20,20,23,0.7);
+    }
+    body { font-family:'Inter',sans-serif; -webkit-tap-highlight-color:transparent; }
+    ::-webkit-scrollbar { width:0; background:transparent; }
+    @media(min-width:1024px){
+      ::-webkit-scrollbar { width:5px; }
+      ::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.12); border-radius:10px; }
+      .dark ::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); }
+    }
+    .glass { background:var(--glass-bg); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid var(--glass-border); }
+    .pb-safe  { padding-bottom:env(safe-area-inset-bottom); }
+    .pt-safe  { padding-top:env(safe-area-inset-top); }
+    .mb-safe  { margin-bottom:env(safe-area-inset-bottom); }
+
+    /* page transitions */
+    .page { display:none; }
+    .page.active { display:block; animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+    /* range input */
+    input[type=range] { accent-color:var(--accent); }
+
+    /* modal overlay */
+    .modal-wrap { display:none; position:fixed; inset:0; z-index:60; align-items:center; justify-content:center; background:rgba(0,0,0,0.55); backdrop-filter:blur(4px); }
+    .modal-wrap.open { display:flex; }
+
+    /* toast */
+    #toast { position:fixed; bottom:calc(5rem + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%) translateY(10px); background:#1e293b; color:#fff; padding:0.6rem 1.2rem; border-radius:2rem; font-size:0.78rem; font-weight:500; opacity:0; transition:all 0.25s; pointer-events:none; z-index:200; white-space:nowrap; }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* stat ring */
+    .ring-chart { --pct:0; width:52px; height:52px; border-radius:50%; background: conic-gradient(var(--accent) calc(var(--pct) * 1%), rgba(255,255,255,0.1) 0); display:flex; align-items:center; justify-content:center; }
+
+    /* calendar day */
+    .cal-day { min-height:52px; }
+    .cal-day.today { ring:2px; ring-color:var(--accent); }
+
+    /* simulado timer pulse */
+    @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .timer-critical { animation: timerPulse 1s infinite; color:#ef4444; }
+
+    /* nav active indicator */
+    .nav-btn.active .nav-dot { background:var(--accent); }
+    .nav-btn.active span { color:var(--accent); }
+
+    /* sidebar active */
+    .sidebar-link.active { background:rgba(59,130,246,0.12); color:#3b82f6; }
+    .sidebar-link.active svg { color:#3b82f6; }
+  </style>
+</head>
+
+<body class="bg-[#f2f4f7] dark:bg-black text-slate-900 dark:text-slate-100 overflow-x-hidden">
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYOUT WRAPPER
+══════════════════════════════════════════════════════════════ -->
+<div id="app" class="flex min-h-screen">
+
+  <!-- ── SIDEBAR (desktop lg+) ─────────────────────────────────── -->
+  <aside id="sidebar" class="hidden lg:flex flex-col w-60 shrink-0 fixed inset-y-0 left-0 z-30 glass border-r border-white/10 dark:border-white/5 pt-safe">
+    <!-- Brand -->
+    <div class="flex items-center gap-3 px-5 py-5">
+      <div class="w-9 h-9 rounded-xl bg-brand flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 6v6l4 2"/></svg>
+      </div>
       <div>
-        <span class="brand-name">MEDREV</span>
-        <span class="brand-sub">FSRS 4.5</span>
+        <p class="font-bold text-sm tracking-wide">MedRev</p>
+        <p class="text-[0.65rem] text-slate-400 font-medium tracking-widest uppercase">FSRS 4.5</p>
       </div>
     </div>
 
-    <nav class="sidebar-nav">
-      <button class="nav-item nav-active" data-page="dashboard">
-        <span class="nav-icon">◆</span> Dashboard
-      </button>
-      <button class="nav-item" data-page="schedule">
-        <span class="nav-icon">◷</span> Cronograma
-      </button>
-      <button class="nav-item" data-page="topics">
-        <span class="nav-icon">⊞</span> Banco
-      </button>
-      <button class="nav-item" data-page="history">
-        <span class="nav-icon">◎</span> Histórico
-      </button>
-      <button class="nav-item" data-page="settings">
-        <span class="nav-icon">⚙</span> Ajustes
-      </button>
+    <!-- Nav links -->
+    <nav class="flex-1 px-3 space-y-0.5 mt-1" id="sidebar-nav">
+      <a class="sidebar-link active flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm font-medium text-slate-600 dark:text-slate-300" data-page="dashboard">
+        <svg class="w-4.5 h-4.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm font-medium text-slate-600 dark:text-slate-300" data-page="simulados">
+        <svg class="w-4.5 h-4.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+        Simulados
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm font-medium text-slate-600 dark:text-slate-300" data-page="agenda">
+        <svg class="w-4.5 h-4.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Agenda
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm font-medium text-slate-600 dark:text-slate-300" data-page="topics">
+        <svg class="w-4.5 h-4.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        Banco
+      </a>
+      <a class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all text-sm font-medium text-slate-600 dark:text-slate-300" data-page="settings">
+        <svg class="w-4.5 h-4.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Ajustes
+      </a>
     </nav>
 
-    <div class="sidebar-footer">
-      <button class="sidebar-user" id="sidebar-user" data-page="settings" title="Ajustes do perfil"></button>
-    </div>
+    <!-- Sidebar user footer -->
+    <button id="sidebar-user" data-page="settings" class="flex items-center gap-3 mx-3 mb-4 px-3 py-2.5 rounded-xl bg-white/30 dark:bg-white/5 hover:bg-white/50 dark:hover:bg-white/10 transition-all text-left w-[calc(100%-1.5rem)] cursor-pointer border-none">
+      <div id="sb-avatar" class="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white font-bold text-sm shrink-0">M</div>
+      <div class="min-w-0">
+        <p id="sb-name" class="text-sm font-semibold truncate">Médico</p>
+        <p class="text-[0.65rem] text-slate-400 uppercase tracking-widest">Residente</p>
+      </div>
+      <svg class="w-4 h-4 text-slate-400 ml-auto shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
   </aside>
 
-  <!-- ── Conteúdo principal ─────────────────────────────────────────────── -->
-  <div class="main-wrap">
+  <!-- ── MAIN CONTENT ─────────────────────────────────────────── -->
+  <div class="flex-1 flex flex-col lg:ml-60 min-w-0">
 
-    <!-- Mobile header -->
-    <div class="mobile-header">
-      <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
-      <span class="mobile-brand">MEDREV</span>
-      <div id="mobile-stats" class="mobile-stats"></div>
-    </div>
+    <!-- Mobile top bar -->
+    <header class="lg:hidden sticky top-0 z-20 glass border-b border-white/20 dark:border-white/5 pt-safe">
+      <div class="flex items-center justify-between px-4 py-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-lg bg-brand flex items-center justify-center">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <span class="font-bold text-sm tracking-wide">MedRev</span>
+        </div>
+        <div id="mobile-streak" class="flex items-center gap-1.5 text-sm font-semibold text-amber-500"></div>
+      </div>
+    </header>
 
-    <main class="main">
+    <!-- Pages container -->
+    <main class="flex-1 px-4 pt-5 pb-28 lg:pb-8 lg:px-8 max-w-4xl w-full mx-auto space-y-5" id="pages-container">
 
-      <!-- ── DASHBOARD ──────────────────────────────────────────────────── -->
-      <section id="pg-dashboard" class="page">
+      <!-- ══ DASHBOARD ══════════════════════════════════════════ -->
+      <section id="pg-dashboard" class="page active space-y-5">
 
-        <div id="greeting" class="greeting"></div>
+        <!-- Greeting + countdown -->
+        <div id="greeting-block">
+          <h1 id="greeting-text" class="text-2xl font-bold tracking-tight"></h1>
+          <p id="greeting-date" class="text-sm text-slate-500 dark:text-slate-400 mt-0.5"></p>
+        </div>
+
+        <!-- Exam countdown -->
         <div id="exam-countdown"></div>
 
-        <div id="dash-stats" class="stat-row"></div>
+        <!-- Streak + daily goal row -->
+        <div class="grid grid-cols-2 gap-3">
+          <div id="streak-card" class="glass rounded-2xl p-4"></div>
+          <div id="daily-goal-card" class="glass rounded-2xl p-4"></div>
+        </div>
 
-        <div id="daily-goal"></div>
+        <!-- Stats row -->
+        <div id="dash-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
 
-        <div class="dash-grid-2">
-          <div>
-            <div class="section-label">AGENDA DE HOJE</div>
-            <div id="schedule-widget"></div>
-          </div>
-          <div>
-            <div class="section-label">FILA DE PRIORIDADE</div>
+        <!-- Priority queue + Today agenda -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="glass rounded-2xl p-4">
+            <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">Fila de Prioridade</p>
             <div id="priority-queue"></div>
           </div>
+          <div class="glass rounded-2xl p-4">
+            <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">Agenda de Hoje</p>
+            <div id="today-agenda"></div>
+          </div>
         </div>
 
-        <div class="section-label">ATIVIDADE — 7 DIAS</div>
-        <div id="dash-chart" class="chart-wrap"></div>
+        <!-- Activity chart -->
+        <div class="glass rounded-2xl p-4">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">Atividade — 7 dias</p>
+          <div id="dash-chart" class="flex items-end gap-1.5 h-20"></div>
+        </div>
 
-        <div class="section-label">DISTRIBUIÇÃO DE RETENÇÃO</div>
-        <div id="dash-dist"></div>
+        <!-- Retention distribution -->
+        <div class="glass rounded-2xl p-4">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">Distribuição de Retenção</p>
+          <div id="dash-dist"></div>
+        </div>
 
-        <div class="section-label" style="margin-top:1.75rem">METRIFIQUE SEU DESEMPENHO</div>
-        <div id="perf-table-wrap" class="perf-table-wrap"></div>
+        <!-- Performance table -->
+        <div class="glass rounded-2xl p-4">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">Metrifique seu Desempenho</p>
+          <div id="perf-table-wrap" class="overflow-x-auto"></div>
+        </div>
 
       </section>
 
-      <!-- ── CRONOGRAMA ─────────────────────────────────────────────────── -->
-      <section id="pg-schedule" class="page hidden">
-        <div class="page-head">
+      <!-- ══ SIMULADOS ══════════════════════════════════════════ -->
+      <section id="pg-simulados" class="page space-y-5">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between">
           <div>
-            <h2 class="page-title">Cronograma</h2>
-            <p class="page-sub">Gerencie seus blocos de estudo diários</p>
+            <h2 class="text-xl font-bold">Simulados</h2>
+            <p id="simulados-count" class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">0 provas realizadas</p>
           </div>
-          <button id="btn-add-block" class="btn-primary">+ Adicionar Bloco</button>
+          <button id="btn-new-simulado" class="flex items-center gap-2 bg-brand hover:bg-blue-600 active:bg-blue-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Novo Simulado
+          </button>
         </div>
-        <div id="schedule-list"></div>
-        <div id="schedule-empty" class="empty hidden">
-          <p>NENHUM BLOCO CADASTRADO</p>
-          <p class="empty-sub">Clique em "+ Adicionar Bloco" para organizar seus estudos.</p>
+
+        <!-- Stats row -->
+        <div id="simulados-stats" class="grid grid-cols-3 gap-3"></div>
+
+        <!-- Simulados list -->
+        <div id="simulados-list" class="space-y-3"></div>
+        <div id="simulados-empty" class="hidden glass rounded-2xl p-10 text-center">
+          <svg class="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+          <p class="font-semibold text-slate-500">Nenhum simulado criado</p>
+          <p class="text-sm text-slate-400 mt-1">Crie sua primeira prova para começar</p>
         </div>
+
+        <!-- Questions bank sub-tab -->
+        <div class="glass rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Banco de Questões</p>
+            <div class="flex gap-2">
+              <button id="btn-import-questions" class="text-xs font-semibold text-brand border border-brand/30 px-3 py-1.5 rounded-lg hover:bg-brand/10 transition-all">⬆ Importar JSON</button>
+              <button id="btn-new-question" class="text-xs font-semibold text-white bg-brand px-3 py-1.5 rounded-lg hover:bg-blue-600 transition-all">+ Questão</button>
+            </div>
+          </div>
+          <p id="questions-count" class="text-sm text-slate-500 mb-3">0 questões cadastradas</p>
+          <div id="questions-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
+        </div>
+
       </section>
 
-      <!-- ── BANCO DE TÓPICOS ───────────────────────────────────────────── -->
-      <section id="pg-topics" class="page hidden">
-        <div class="page-head">
+      <!-- ══ AGENDA ═════════════════════════════════════════════ -->
+      <section id="pg-agenda" class="page space-y-5">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between">
           <div>
-            <h2 class="page-title">Banco de Tópicos</h2>
-            <p class="page-sub" id="topics-count">0 tópicos</p>
+            <h2 class="text-xl font-bold">Agenda</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Cronograma e constância</p>
           </div>
-          <button id="btn-new" class="btn-primary">+ Novo Tópico</button>
+          <button id="btn-add-block" class="flex items-center gap-2 bg-brand hover:bg-blue-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Bloco
+          </button>
         </div>
-        <div class="filter-bar">
-          <input id="search-input" type="search" class="filter-input" placeholder="Buscar tópico..." autocomplete="off">
-          <select id="filter-area" class="filter-select">
+
+        <!-- Streak heat map -->
+        <div class="glass rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Constância</p>
+            <div id="streak-badge" class="flex items-center gap-1 text-sm font-bold text-amber-500">
+              <span>🔥</span><span id="streak-num">0</span><span class="font-normal text-slate-400 text-xs">dias</span>
+            </div>
+          </div>
+          <div id="heatmap" class="flex flex-wrap gap-1"></div>
+        </div>
+
+        <!-- Mini calendar -->
+        <div class="glass rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-4">
+            <button id="cal-prev" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 dark:hover:bg-white/10 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <p id="cal-title" class="text-sm font-semibold"></p>
+            <button id="cal-next" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/20 dark:hover:bg-white/10 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+          <div id="cal-grid" class="grid grid-cols-7 gap-1 text-center text-xs"></div>
+        </div>
+
+        <!-- Blocks for selected day -->
+        <div class="glass rounded-2xl p-4">
+          <p id="agenda-day-label" class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">Hoje</p>
+          <div id="agenda-blocks" class="space-y-2"></div>
+          <div id="agenda-empty" class="hidden text-center py-6 text-slate-400 text-sm">Nenhum bloco neste dia</div>
+        </div>
+
+        <!-- Auto-distribute button -->
+        <button id="btn-auto-distribute" class="w-full glass rounded-2xl p-4 flex items-center justify-between hover:bg-white/30 dark:hover:bg-white/5 transition-all text-left">
+          <div>
+            <p class="font-semibold text-sm">Distribuir Automaticamente</p>
+            <p class="text-xs text-slate-400 mt-0.5">Gera blocos de revisão com base na fila FSRS</p>
+          </div>
+          <svg class="w-5 h-5 text-brand shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+
+      </section>
+
+      <!-- ══ BANCO DE TÓPICOS ════════════════════════════════════ -->
+      <section id="pg-topics" class="page space-y-4">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold">Banco de Tópicos</h2>
+            <p id="topics-count" class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">0 tópicos</p>
+          </div>
+          <button id="btn-new" class="flex items-center gap-2 bg-brand hover:bg-blue-600 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Tópico
+          </button>
+        </div>
+
+        <!-- Filters -->
+        <div class="flex gap-2 flex-wrap">
+          <input id="search-input" type="search" placeholder="Buscar tópico…" autocomplete="off"
+            class="flex-1 min-w-0 bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/40 placeholder:text-slate-400">
+          <select id="filter-area" class="bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/40 dark:text-slate-200">
             <option value="">Todas as áreas</option>
           </select>
-          <select id="sort-select" class="filter-select">
+          <select id="sort-select" class="bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/40 dark:text-slate-200">
             <option value="due">Revisão</option>
             <option value="score">Prioridade</option>
             <option value="name">Nome</option>
@@ -125,285 +357,494 @@
             <option value="retention">Retenção</option>
           </select>
         </div>
-        <div id="topic-list" role="list"></div>
-        <div id="empty-state" class="empty hidden">
-          <p>SEM TÓPICOS CADASTRADOS</p>
-          <p class="empty-sub">Clique em "+ Novo Tópico" para começar.</p>
+
+        <div id="topic-list" class="space-y-2"></div>
+        <div id="empty-state" class="hidden glass rounded-2xl p-10 text-center">
+          <svg class="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+          <p class="font-semibold text-slate-500">Nenhum tópico cadastrado</p>
+          <p class="text-sm text-slate-400 mt-1">Clique em "+ Tópico" para começar</p>
         </div>
+
       </section>
 
-      <!-- ── HISTÓRICO ──────────────────────────────────────────────────── -->
-      <section id="pg-history" class="page hidden">
-        <div class="page-head">
-          <div>
-            <h2 class="page-title">Histórico de Revisões</h2>
-            <p class="page-sub" id="history-count">0 sessões</p>
-          </div>
-        </div>
-        <div id="history-list"></div>
-        <div id="history-empty" class="empty hidden">
-          <p>NENHUMA SESSÃO REGISTRADA</p>
-          <p class="empty-sub">Conclua uma sessão de estudo para ver o histórico.</p>
-        </div>
-      </section>
+      <!-- ══ AJUSTES ════════════════════════════════════════════ -->
+      <section id="pg-settings" class="page space-y-5">
 
-      <!-- ── AJUSTES ────────────────────────────────────────────────────── -->
-      <section id="pg-settings" class="page hidden">
-        <div class="page-head">
-          <div>
-            <h2 class="page-title">Ajustes</h2>
-            <p class="page-sub">Configurações e backup de dados</p>
-          </div>
+        <div>
+          <h2 class="text-xl font-bold">Ajustes</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Perfil, metas e dados</p>
         </div>
 
-        <div class="section-label">PERFIL</div>
-        <div class="settings-card">
-          <div class="field" style="max-width:320px">
-            <label for="in-settings-name">SEU NOME</label>
-            <input id="in-settings-name" type="text" placeholder="ex: João" maxlength="40" autocomplete="off">
+        <!-- Perfil -->
+        <div class="glass rounded-2xl p-5 space-y-4">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Perfil</p>
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Seu Nome</label>
+            <input id="in-settings-name" type="text" placeholder="ex: João" maxlength="40" autocomplete="off"
+              class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
           </div>
-          <div class="field" style="max-width:320px;margin-top:1rem">
-            <label for="in-exam-date">DATA DA PROVA</label>
-            <input id="in-exam-date" type="date">
-            <span style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;display:block">
-              Ativa o contador regressivo no Dashboard e calibra a Meta de Questões Diária.
-            </span>
-          </div>
-          <div style="margin-top:1.25rem">
-            <button id="btn-save-settings" class="btn-primary">SALVAR AJUSTES</button>
-          </div>
-        </div>
-
-        <div class="section-label" style="margin-top:1.75rem">BACKUP LOCAL</div>
-        <div class="settings-card">
-          <div class="backup-row">
-            <div class="backup-info">
-              <strong class="backup-title">Exportar Dados (JSON)</strong>
-              <p class="backup-desc">Baixa um arquivo com todos os tópicos, histórico, cronograma e configurações. Use antes de trocar de dispositivo.</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="space-y-2">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Data da Prova</label>
+              <input id="in-exam-date" type="date"
+                class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40 dark:text-slate-200 dark:color-scheme-dark">
             </div>
-            <button id="btn-export" class="btn-primary">⬇ EXPORTAR</button>
-          </div>
-          <div class="backup-row" style="margin-top:1.25rem;padding-top:1.25rem;border-top:var(--border)">
-            <div class="backup-info">
-              <strong class="backup-title">Importar Dados (JSON)</strong>
-              <p class="backup-desc">Restaura o progresso a partir de um arquivo exportado. Atenção: substitui todos os dados atuais.</p>
+            <div class="space-y-2">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Meta Diária (questões)</label>
+              <input id="in-daily-goal" type="number" min="10" max="500" placeholder="50"
+                class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
             </div>
-            <label class="btn-ghost" style="cursor:pointer;white-space:nowrap">
-              ⬆ IMPORTAR
-              <input id="in-import" type="file" accept=".json" style="display:none">
+          </div>
+          <button id="btn-save-settings" class="w-full bg-brand hover:bg-blue-600 text-white font-semibold text-sm py-2.5 rounded-xl transition-all">
+            Salvar Ajustes
+          </button>
+        </div>
+
+        <!-- Tema -->
+        <div class="glass rounded-2xl p-5 space-y-3">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Aparência</p>
+          <div class="flex gap-2">
+            <button id="btn-theme-dark" class="flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 border-brand bg-brand/10 text-brand transition-all">🌙 Escuro</button>
+            <button id="btn-theme-light" class="flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 border-transparent bg-white/30 dark:bg-white/5 text-slate-600 dark:text-slate-300 transition-all">☀️ Claro</button>
+          </div>
+        </div>
+
+        <!-- Fila -->
+        <div class="glass rounded-2xl p-5">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">Fila de Prioridade</p>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-semibold">Otimizar Fila</p>
+              <p class="text-xs text-slate-400 mt-0.5">Recalcula prioridades sem alterar dados FSRS</p>
+            </div>
+            <button id="btn-optimize" class="bg-brand/10 hover:bg-brand/20 text-brand font-semibold text-sm px-4 py-2 rounded-xl transition-all border border-brand/20">↻ Otimizar</button>
+          </div>
+        </div>
+
+        <!-- Backup -->
+        <div class="glass rounded-2xl p-5 space-y-3">
+          <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Backup Local</p>
+          <div class="flex items-center justify-between py-2">
+            <div>
+              <p class="text-sm font-semibold">Exportar Dados</p>
+              <p class="text-xs text-slate-400">Salva JSON com todos os dados</p>
+            </div>
+            <button id="btn-export" class="bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 font-semibold text-sm px-4 py-2 rounded-xl transition-all border border-white/30 dark:border-white/10">⬇ Exportar</button>
+          </div>
+          <div class="border-t border-white/20 dark:border-white/5 pt-3 flex items-center justify-between py-2">
+            <div>
+              <p class="text-sm font-semibold">Importar Dados</p>
+              <p class="text-xs text-slate-400">Restaura de arquivo exportado</p>
+            </div>
+            <label class="bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 font-semibold text-sm px-4 py-2 rounded-xl transition-all border border-white/30 dark:border-white/10 cursor-pointer">
+              ⬆ Importar
+              <input id="in-import" type="file" accept=".json" class="hidden">
             </label>
           </div>
         </div>
 
-        <div class="section-label" style="margin-top:1.75rem">FILA DE PRIORIDADE</div>
-        <div class="settings-card">
-          <div class="backup-row">
-            <div class="backup-info">
-              <strong class="backup-title">Otimizar Fila</strong>
-              <p class="backup-desc">Recalcula as prioridades da fila de revisão. Útil se ficou dias sem acessar o app.</p>
-            </div>
-            <button id="btn-optimize" class="btn-primary">↻ OTIMIZAR</button>
-          </div>
+        <!-- Version info -->
+        <div class="glass rounded-2xl p-5 text-xs text-slate-400 space-y-1">
+          <p><span class="font-semibold text-slate-500">Versão</span> · MedRev 3.0 (FSRS 4.5)</p>
+          <p><span class="font-semibold text-slate-500">Dados</span> · Armazenados localmente no navegador</p>
+          <p><span class="font-semibold text-slate-500">Algoritmo</span> · FSRS-4.5 — pesos fixos, nunca alterados</p>
         </div>
+
       </section>
 
-    </main>
-  </div>
+    </main><!-- /pages-container -->
 
-  <!-- ── Modal: Onboarding (primeiro acesso) ───────────────────────────── -->
-  <div id="modal-onboarding" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="modal-box modal-sm">
-      <div class="modal-head">
-        <h2>Bem-vindo ao MedRev</h2>
+    <!-- ── BOTTOM NAV (mobile) ────────────────────────────────── -->
+    <nav class="lg:hidden fixed bottom-0 inset-x-0 z-30 glass border-t border-white/20 dark:border-white/5 pb-safe" id="bottom-nav">
+      <div class="flex items-center justify-around px-2 pt-2 pb-1">
+        <button class="nav-btn active flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all" data-page="dashboard">
+          <svg class="w-5 h-5 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span class="text-[0.6rem] font-semibold text-brand">Home</span>
+        </button>
+        <button class="nav-btn flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all" data-page="simulados">
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+          <span class="text-[0.6rem] font-semibold text-slate-400">Provas</span>
+        </button>
+        <button class="nav-btn flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all" data-page="agenda">
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span class="text-[0.6rem] font-semibold text-slate-400">Agenda</span>
+        </button>
+        <button class="nav-btn flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all" data-page="topics">
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+          <span class="text-[0.6rem] font-semibold text-slate-400">Banco</span>
+        </button>
+        <button class="nav-btn flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all" data-page="settings">
+          <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <span class="text-[0.6rem] font-semibold text-slate-400">Config</span>
+        </button>
       </div>
-      <form id="form-onboarding">
-        <p class="onboarding-text">Como você quer ser chamado?</p>
-        <div class="field">
-          <label for="in-username">SEU NOME</label>
-          <input id="in-username" type="text" placeholder="ex: João" required maxlength="40" autocomplete="off">
+    </nav>
+
+  </div><!-- /main content -->
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════════════════════════════
+     MODALS
+══════════════════════════════════════════════════════════════ -->
+
+<!-- Onboarding -->
+<div id="modal-onboarding" class="modal-wrap open">
+  <div class="glass rounded-3xl p-8 w-full max-w-sm mx-4 animate-scale-in space-y-5">
+    <div class="text-center">
+      <div class="w-16 h-16 rounded-2xl bg-brand mx-auto flex items-center justify-center mb-4">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <h2 class="text-xl font-bold">Bem-vindo ao MedRev</h2>
+      <p class="text-sm text-slate-400 mt-1">Como você quer ser chamado?</p>
+    </div>
+    <form id="form-onboarding" class="space-y-4">
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Seu Nome</label>
+        <input id="in-username" type="text" placeholder="ex: João" required maxlength="40" autocomplete="off"
+          class="w-full bg-white/60 dark:bg-white/8 border border-white/30 dark:border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+      </div>
+      <button type="submit" class="w-full bg-brand hover:bg-blue-600 text-white font-semibold py-3 rounded-xl transition-all">
+        Começar
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Novo Tópico -->
+<div id="modal-new" class="modal-wrap">
+  <div class="glass rounded-3xl p-6 w-full max-w-md mx-4 animate-scale-in max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-bold">Novo Tópico</h2>
+      <button class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/20 dark:hover:bg-white/10 transition-all text-slate-400" data-close="modal-new">✕</button>
+    </div>
+    <form id="form-new" novalidate class="space-y-4">
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Nome do Tópico</label>
+        <input id="in-name" type="text" autocomplete="off" placeholder="ex: IAM e Síndromes Coronarianas" required maxlength="120"
+          class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+        <p class="text-red-400 text-xs hidden" id="err-name">Campo obrigatório.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Grande Área *</label>
+          <select id="in-area" required class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40 dark:text-slate-200"></select>
+          <p class="text-red-400 text-xs hidden" id="err-area">Selecione uma área.</p>
         </div>
-        <div class="modal-foot">
-          <button type="submit" class="btn-primary" style="width:100%">COMEÇAR</button>
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Especialidade *</label>
+          <select id="in-subcategory" required class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40 dark:text-slate-200"></select>
         </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Peso High-Yield — <span id="weight-val" class="text-brand">5</span>/10</label>
+          <input id="in-weight" type="range" min="1" max="10" value="5" step="1" class="w-full">
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Relevância — <span id="rel-val" class="text-brand">3</span>/5</label>
+          <input id="in-rel" type="range" min="1" max="5" value="3" step="1" class="w-full">
+        </div>
+      </div>
+      <div class="flex items-center justify-between text-xs bg-white/40 dark:bg-white/5 rounded-xl px-4 py-2.5 border border-white/20 dark:border-white/10">
+        <span class="font-semibold text-slate-500 uppercase tracking-wider">Retenção Alvo (R★)</span>
+        <span id="r-target-val" class="font-bold text-brand">90.0%</span>
+      </div>
+      <div class="flex gap-3 pt-1">
+        <button type="submit" class="flex-1 bg-brand hover:bg-blue-600 text-white font-semibold py-2.5 rounded-xl transition-all text-sm">Cadastrar</button>
+        <button type="button" class="flex-1 bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 font-semibold py-2.5 rounded-xl transition-all text-sm" data-close="modal-new">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Sessão de Estudo (Revisão FSRS) -->
+<div id="modal-study" class="modal-wrap">
+  <div class="glass rounded-3xl p-6 w-full max-w-md mx-4 animate-scale-in">
+    <div class="flex items-center justify-between mb-4">
+      <h2 id="study-name" class="text-base font-bold truncate pr-4">—</h2>
+      <button class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/20 dark:hover:bg-white/10 transition-all text-slate-400 shrink-0" data-close="modal-study">✕</button>
+    </div>
+    <div id="study-state" class="mb-4"></div>
+
+    <!-- Pane 1: entrada -->
+    <div id="pane-input">
+      <form id="form-study" novalidate class="space-y-4">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5">
+            <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Questões Respondidas</label>
+            <input id="in-q" type="number" min="1" max="999" placeholder="20" required
+              class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Acertos</label>
+            <input id="in-hits" type="number" min="0" placeholder="17" required
+              class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+          </div>
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Acurácia Bruta (A)</label>
+          <div class="h-2 bg-white/20 dark:bg-white/10 rounded-full overflow-hidden"><div id="acc-bar" class="h-full bg-brand rounded-full transition-all" style="width:0%"></div></div>
+          <p id="acc-pct" class="text-right text-xs text-slate-400">—</p>
+        </div>
+        <div id="e-preview-row" class="hidden flex items-center justify-between text-xs bg-white/40 dark:bg-white/5 rounded-xl px-4 py-2.5 border border-white/20 dark:border-white/10">
+          <span class="font-semibold text-slate-500 uppercase tracking-wider">Acurácia Efetiva (E) · Rating</span>
+          <span id="e-preview" class="font-bold text-brand">—</span>
+        </div>
+        <p class="text-red-400 text-xs hidden" id="err-study"></p>
+        <button type="submit" class="w-full bg-brand hover:bg-blue-600 text-white font-semibold py-2.5 rounded-xl transition-all text-sm">Calcular</button>
       </form>
     </div>
-  </div>
 
-  <!-- ── Modal: Novo Tópico ─────────────────────────────────────────────── -->
-  <div id="modal-new" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h2>Novo Tópico</h2>
-        <button class="btn-x" data-close="modal-new">✕</button>
+    <!-- Pane 2: taxonomia erro -->
+    <div id="pane-error-taxonomy" class="hidden space-y-3">
+      <div class="mb-2">
+        <p class="font-bold text-sm">Por que você errou?</p>
+        <p class="text-xs text-slate-400">Selecione o tipo de erro para continuar.</p>
       </div>
-      <form id="form-new" novalidate>
-        <div class="field">
-          <label for="in-name">NOME DO TÓPICO</label>
-          <input id="in-name" type="text" autocomplete="off" placeholder="ex: IAM e Síndromes Coronarianas" required maxlength="120">
-          <span class="field-error hidden" id="err-name">Campo obrigatório.</span>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="in-area">GRANDE ÁREA *</label>
-            <select id="in-area" class="filter-select" style="width:100%" required></select>
-            <span class="field-error hidden" id="err-area">Selecione uma área.</span>
-          </div>
-          <div class="field">
-            <label for="in-subcategory">ESPECIALIDADE *</label>
-            <select id="in-subcategory" class="filter-select" style="width:100%" required></select>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="in-weight">PESO HIGH-YIELD — <strong id="weight-val">5</strong>/10</label>
-            <input id="in-weight" type="range" min="1" max="10" value="5" step="1">
-            <div class="range-labels"><span>Baixo</span><span>Alto</span></div>
-          </div>
-          <div class="field">
-            <label for="in-rel">RELEVÂNCIA — <strong id="rel-val">3</strong>/5</label>
-            <input id="in-rel" type="range" min="1" max="5" value="3" step="1">
-            <div class="range-labels"><span>Baixa</span><span>Alta</span></div>
-          </div>
-        </div>
-
-        <div class="field field-info">
-          <span class="info-label">RETENÇÃO ALVO (R★)</span>
-          <span class="info-value" id="r-target-val">90.0%</span>
-        </div>
-
-        <div class="modal-foot">
-          <button type="submit" class="btn-primary">CADASTRAR</button>
-          <button type="button" class="btn-ghost" data-close="modal-new">CANCELAR</button>
-        </div>
-      </form>
+      <button class="taxonomy-btn w-full flex items-center gap-3 p-4 bg-white/40 dark:bg-white/5 rounded-2xl hover:bg-white/60 dark:hover:bg-white/10 transition-all border border-white/20 dark:border-white/10 text-left" data-error="knowledge">
+        <span class="text-2xl">🧠</span>
+        <div><strong class="text-sm block">Falta de Conhecimento</strong><span class="text-xs text-slate-400">Não sabia o conteúdo teórico</span></div>
+      </button>
+      <button class="taxonomy-btn w-full flex items-center gap-3 p-4 bg-white/40 dark:bg-white/5 rounded-2xl hover:bg-white/60 dark:hover:bg-white/10 transition-all border border-white/20 dark:border-white/10 text-left" data-error="confusion">
+        <span class="text-2xl">😵</span>
+        <div><strong class="text-sm block">Confusão / Distração</strong><span class="text-xs text-slate-400">Sabia, mas errou por descuido</span></div>
+      </button>
+      <button class="taxonomy-btn w-full flex items-center gap-3 p-4 bg-white/40 dark:bg-white/5 rounded-2xl hover:bg-white/60 dark:hover:bg-white/10 transition-all border border-white/20 dark:border-white/10 text-left" data-error="clinical">
+        <span class="text-2xl">🏥</span>
+        <div><strong class="text-sm block">Erro de Aplicação Clínica</strong><span class="text-xs text-slate-400">Sabia o conteúdo, errou na aplicação</span></div>
+      </button>
     </div>
-  </div>
 
-  <!-- ── Modal: Sessão de Estudo ────────────────────────────────────────── -->
-  <div id="modal-study" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h2 id="study-name">—</h2>
-        <button class="btn-x" data-close="modal-study">✕</button>
-      </div>
-
-      <!-- Painel 1: Entrada de dados -->
-      <div id="pane-input">
-        <div id="study-state" class="state-bar"></div>
-        <form id="form-study" novalidate>
-          <div class="field-row">
-            <div class="field">
-              <label for="in-q">QUESTÕES RESPONDIDAS</label>
-              <input id="in-q" type="number" min="1" max="999" placeholder="20" required>
-            </div>
-            <div class="field">
-              <label for="in-hits">ACERTOS</label>
-              <input id="in-hits" type="number" min="0" placeholder="17" required>
-            </div>
-          </div>
-          <div class="field">
-            <label>ACURÁCIA BRUTA (A)</label>
-            <div class="acc-track">
-              <div id="acc-bar" class="acc-fill"></div>
-              <span id="acc-pct" class="acc-label">—</span>
-            </div>
-          </div>
-          <div class="field field-info" id="e-preview-row" style="display:none">
-            <span class="info-label">ACURÁCIA EFETIVA (E) · RATING FSRS</span>
-            <span class="info-value" id="e-preview">—</span>
-          </div>
-          <span class="field-error hidden" id="err-study"></span>
-          <div class="modal-foot">
-            <button type="submit" class="btn-primary">CALCULAR</button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Painel 2: Taxonomia Metacognitiva do Erro (somente rating=1) -->
-      <div id="pane-error-taxonomy" class="hidden">
-        <div class="taxonomy-header">
-          <p class="taxonomy-title">Por que você errou?</p>
-          <p class="taxonomy-sub">Selecione o tipo de erro para continuar.</p>
-        </div>
-        <div class="taxonomy-options">
-          <button class="taxonomy-btn" data-error="knowledge">
-            <span class="taxonomy-icon">🧠</span>
-            <div class="taxonomy-text">
-              <strong>Falta de Conhecimento</strong>
-              <span>Não sabia o conteúdo teórico</span>
-            </div>
-          </button>
-          <button class="taxonomy-btn" data-error="confusion">
-            <span class="taxonomy-icon">😵</span>
-            <div class="taxonomy-text">
-              <strong>Confusão / Distração</strong>
-              <span>Sabia, mas errou por descuido</span>
-            </div>
-          </button>
-          <button class="taxonomy-btn" data-error="clinical">
-            <span class="taxonomy-icon">🏥</span>
-            <div class="taxonomy-text">
-              <strong>Erro de Aplicação Clínica</strong>
-              <span>Sabia o conteúdo, errou na aplicação</span>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      <!-- Painel 3: Resultado -->
-      <div id="pane-result" class="hidden">
-        <div id="res-rating"></div>
-        <div class="res-grid" id="res-grid"></div>
-        <div id="res-next"></div>
-        <div class="modal-foot">
-          <button id="btn-confirm" class="btn-primary">CONFIRMAR E SALVAR</button>
-          <button id="btn-redo" class="btn-ghost">REFAZER</button>
-        </div>
+    <!-- Pane 3: resultado -->
+    <div id="pane-result" class="hidden space-y-4">
+      <div id="res-rating"></div>
+      <div id="res-grid" class="grid grid-cols-2 gap-2 text-xs"></div>
+      <div id="res-next" class="text-center text-sm"></div>
+      <div class="flex gap-3">
+        <button id="btn-confirm" class="flex-1 bg-brand hover:bg-blue-600 text-white font-semibold py-2.5 rounded-xl transition-all text-sm">Confirmar e Salvar</button>
+        <button id="btn-redo" class="flex-1 bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 font-semibold py-2.5 rounded-xl transition-all text-sm">Refazer</button>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- ── Modal: Adicionar Bloco de Agenda ──────────────────────────────── -->
-  <div id="modal-block" class="modal hidden" role="dialog" aria-modal="true">
-    <div class="modal-box modal-sm">
-      <div class="modal-head">
-        <h2>Adicionar Bloco</h2>
-        <button class="btn-x" data-close="modal-block">✕</button>
+<!-- Novo Simulado -->
+<div id="modal-new-simulado" class="modal-wrap">
+  <div class="glass rounded-3xl p-6 w-full max-w-md mx-4 animate-scale-in max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-bold">Novo Simulado</h2>
+      <button class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/20 dark:hover:bg-white/10 transition-all text-slate-400" data-close="modal-new-simulado">✕</button>
+    </div>
+    <form id="form-new-simulado" class="space-y-4">
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Nome do Simulado</label>
+        <input id="in-sim-name" type="text" placeholder="ex: Simulado Clínica Médica #1" required maxlength="80"
+          class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
       </div>
-      <form id="form-block" novalidate>
-        <div class="field-row">
-          <div class="field">
-            <label for="in-block-date">DATA</label>
-            <input id="in-block-date" type="date" required>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Nº de Questões</label>
+          <input id="in-sim-count" type="number" min="5" max="200" value="60" required
+            class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Duração (min)</label>
+          <input id="in-sim-duration" type="number" min="10" max="360" value="120" required
+            class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+        </div>
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Filtrar Área (opcional)</label>
+        <select id="in-sim-area" class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40 dark:text-slate-200">
+          <option value="">Todas as áreas</option>
+        </select>
+      </div>
+      <p id="err-sim" class="text-red-400 text-xs hidden"></p>
+      <div class="flex gap-3 pt-1">
+        <button type="submit" class="flex-1 bg-brand hover:bg-blue-600 text-white font-semibold py-2.5 rounded-xl transition-all text-sm">Criar Simulado</button>
+        <button type="button" class="flex-1 bg-white/40 dark:bg-white/5 font-semibold py-2.5 rounded-xl transition-all text-sm" data-close="modal-new-simulado">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Nova Questão -->
+<div id="modal-new-question" class="modal-wrap">
+  <div class="glass rounded-3xl p-6 w-full max-w-lg mx-4 animate-scale-in max-h-[92vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-bold">Nova Questão</h2>
+      <button class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/20 dark:hover:bg-white/10 transition-all text-slate-400" data-close="modal-new-question">✕</button>
+    </div>
+    <form id="form-new-question" class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Grande Área</label>
+          <select id="in-q-area" class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40 dark:text-slate-200"></select>
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Especialidade</label>
+          <select id="in-q-sub" class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40 dark:text-slate-200"></select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Fonte</label>
+          <input id="in-q-source" type="text" placeholder="ex: USP 2023" maxlength="40"
+            class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Ano</label>
+          <input id="in-q-year" type="number" placeholder="2024" min="1990" max="2030"
+            class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+        </div>
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Enunciado</label>
+        <textarea id="in-q-text" rows="4" required placeholder="Digite o enunciado da questão…"
+          class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40 resize-none"></textarea>
+      </div>
+      <!-- Options A–E -->
+      <div class="space-y-2">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Alternativas</label>
+        <div id="options-list" class="space-y-2">
+          <div class="flex gap-2 items-center">
+            <input type="radio" name="correct-opt" value="0" class="shrink-0 accent-brand" checked>
+            <span class="text-sm font-bold text-slate-400 w-5">A</span>
+            <input type="text" placeholder="Alternativa A" data-opt="0" class="opt-input flex-1 bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/40">
           </div>
-          <div class="field">
-            <label for="in-block-time">HORÁRIO</label>
-            <input id="in-block-time" type="time" required>
+          <div class="flex gap-2 items-center">
+            <input type="radio" name="correct-opt" value="1" class="shrink-0 accent-brand">
+            <span class="text-sm font-bold text-slate-400 w-5">B</span>
+            <input type="text" placeholder="Alternativa B" data-opt="1" class="opt-input flex-1 bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+          </div>
+          <div class="flex gap-2 items-center">
+            <input type="radio" name="correct-opt" value="2" class="shrink-0 accent-brand">
+            <span class="text-sm font-bold text-slate-400 w-5">C</span>
+            <input type="text" placeholder="Alternativa C" data-opt="2" class="opt-input flex-1 bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+          </div>
+          <div class="flex gap-2 items-center">
+            <input type="radio" name="correct-opt" value="3" class="shrink-0 accent-brand">
+            <span class="text-sm font-bold text-slate-400 w-5">D</span>
+            <input type="text" placeholder="Alternativa D" data-opt="3" class="opt-input flex-1 bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+          </div>
+          <div class="flex gap-2 items-center">
+            <input type="radio" name="correct-opt" value="4" class="shrink-0 accent-brand">
+            <span class="text-sm font-bold text-slate-400 w-5">E</span>
+            <input type="text" placeholder="Alternativa E" data-opt="4" class="opt-input flex-1 bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/40">
           </div>
         </div>
-        <div class="field">
-          <label for="in-block-title">TÍTULO</label>
-          <input id="in-block-title" type="text" placeholder="ex: Bloco 1: Ginecologia" required maxlength="80">
+        <p class="text-[0.65rem] text-slate-400">Marque o radio ao lado da alternativa correta.</p>
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Comentário / Gabarito (opcional)</label>
+        <textarea id="in-q-explanation" rows="2" placeholder="Explicação da resposta correta…"
+          class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40 resize-none"></textarea>
+      </div>
+      <div class="flex gap-3 pt-1">
+        <button type="submit" class="flex-1 bg-brand hover:bg-blue-600 text-white font-semibold py-2.5 rounded-xl transition-all text-sm">Salvar Questão</button>
+        <button type="button" class="flex-1 bg-white/40 dark:bg-white/5 font-semibold py-2.5 rounded-xl transition-all text-sm" data-close="modal-new-question">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Simulado em execução (fullscreen) -->
+<div id="modal-running-simulado" class="modal-wrap">
+  <div class="w-full h-full max-w-3xl mx-auto flex flex-col bg-[#f2f4f7] dark:bg-black pt-safe pb-safe overflow-hidden">
+    <!-- Top bar -->
+    <div class="flex items-center justify-between px-5 py-3 glass border-b border-white/20 dark:border-white/5 shrink-0">
+      <p id="sim-run-name" class="font-bold text-sm truncate pr-4">Simulado</p>
+      <div class="flex items-center gap-4">
+        <p id="sim-progress" class="text-xs text-slate-400 font-medium">1/60</p>
+        <p id="sim-timer" class="font-bold text-sm tabular-nums text-brand">02:00:00</p>
+        <button id="btn-finish-simulado" class="text-xs font-semibold text-red-400 border border-red-400/30 px-3 py-1.5 rounded-lg hover:bg-red-400/10 transition-all">Encerrar</button>
+      </div>
+    </div>
+    <!-- Question area -->
+    <div class="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+      <div id="sim-question-area" class="space-y-4">
+        <div class="flex items-center gap-2">
+          <span id="sim-q-num" class="text-xs font-bold text-slate-400 uppercase tracking-widest">Questão 1</span>
+          <span id="sim-q-area-tag" class="text-xs font-semibold text-brand bg-brand/10 px-2 py-0.5 rounded-full"></span>
         </div>
-        <div class="field">
-          <label for="in-block-type">TIPO</label>
-          <select id="in-block-type" class="filter-select" style="width:100%">
-            <option value="study">Estudo Ativo</option>
-            <option value="review">Revisão FSRS</option>
-            <option value="simulation">Simulado</option>
-          </select>
-        </div>
-        <div class="modal-foot">
-          <button type="submit" class="btn-primary">ADICIONAR</button>
-          <button type="button" class="btn-ghost" data-close="modal-block">CANCELAR</button>
-        </div>
-      </form>
+        <p id="sim-q-text" class="text-sm leading-relaxed font-medium"></p>
+        <div id="sim-options" class="space-y-2"></div>
+      </div>
+    </div>
+    <!-- Nav buttons -->
+    <div class="flex items-center gap-3 px-5 py-3 glass border-t border-white/20 dark:border-white/5 shrink-0">
+      <button id="sim-prev" class="flex-1 bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 font-semibold text-sm py-2.5 rounded-xl transition-all border border-white/20 dark:border-white/10">← Anterior</button>
+      <button id="sim-next" class="flex-1 bg-brand hover:bg-blue-600 text-white font-semibold text-sm py-2.5 rounded-xl transition-all">Próxima →</button>
     </div>
   </div>
+</div>
 
-  <div id="overlay" class="overlay hidden"></div>
-  <script src="js/bundle.js"></script>
+<!-- Resultado Simulado -->
+<div id="modal-result-simulado" class="modal-wrap">
+  <div class="glass rounded-3xl p-6 w-full max-w-md mx-4 animate-scale-in max-h-[90vh] overflow-y-auto space-y-5">
+    <div class="text-center space-y-1">
+      <h2 class="text-xl font-bold">Resultado Final</h2>
+      <p id="res-sim-name" class="text-sm text-slate-400"></p>
+    </div>
+    <div id="res-sim-score" class="text-center"></div>
+    <div id="res-sim-by-area" class="space-y-2"></div>
+    <div id="res-sim-fsrs-info" class="text-xs text-slate-400 glass rounded-xl p-3 border border-white/10"></div>
+    <button id="btn-close-result" class="w-full bg-brand hover:bg-blue-600 text-white font-semibold py-2.5 rounded-xl transition-all text-sm">Concluir</button>
+  </div>
+</div>
+
+<!-- Adicionar Bloco Agenda -->
+<div id="modal-block" class="modal-wrap">
+  <div class="glass rounded-3xl p-6 w-full max-w-sm mx-4 animate-scale-in">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-bold">Adicionar Bloco</h2>
+      <button class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/20 dark:hover:bg-white/10 transition-all text-slate-400" data-close="modal-block">✕</button>
+    </div>
+    <form id="form-block" novalidate class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Data</label>
+          <input id="in-block-date" type="date" required
+            class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40 dark:text-slate-200">
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Horário</label>
+          <input id="in-block-time" type="time" required
+            class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40 dark:text-slate-200">
+        </div>
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Título</label>
+        <input id="in-block-title" type="text" placeholder="ex: Bloco 1: Ginecologia" required maxlength="80"
+          class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tipo</label>
+        <select id="in-block-type" class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40 dark:text-slate-200">
+          <option value="study">Estudo Ativo</option>
+          <option value="review">Revisão FSRS</option>
+          <option value="simulado">Simulado</option>
+        </select>
+      </div>
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">Duração (min)</label>
+        <input id="in-block-duration" type="number" min="15" max="480" value="60"
+          class="w-full bg-white/60 dark:bg-white/5 border border-white/30 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/40">
+      </div>
+      <div class="flex gap-3 pt-1">
+        <button type="submit" class="flex-1 bg-brand hover:bg-blue-600 text-white font-semibold py-2.5 rounded-xl transition-all text-sm">Adicionar</button>
+        <button type="button" class="flex-1 bg-white/40 dark:bg-white/5 font-semibold py-2.5 rounded-xl transition-all text-sm" data-close="modal-block">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Input hidden para importar questões -->
+<input id="in-import-questions" type="file" accept=".json" class="hidden">
+
+<script src="js/bundle.js"></script>
 </body>
 </html>
