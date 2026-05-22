@@ -3,107 +3,198 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MedRev — Revisão para Residência</title>
-  <meta name="description" content="Sistema de revisão espaçada FSRS para residência médica.">
+  <title>MedRev</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ── Header ─────────────────────────────────────────────────────────── -->
-  <header id="app-header">
-    <div class="brand">
-      <span class="brand-name">MEDREV</span>
-      <span class="brand-sub">FSRS-4.5 · Residência Médica</span>
+  <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">M</span>
+      <div>
+        <span class="brand-name">MEDREV</span>
+        <span class="brand-sub">FSRS 4.5</span>
+      </div>
     </div>
-    <div id="header-stats" class="header-stats"></div>
-  </header>
 
-  <!-- ── Navegação por abas ─────────────────────────────────────────────── -->
-  <nav class="tab-nav" role="tablist">
-    <button class="tab-btn tab-active" data-page="dashboard" role="tab">DASHBOARD</button>
-    <button class="tab-btn" data-page="topics" role="tab">TÓPICOS</button>
-    <button class="tab-btn" data-page="history" role="tab">HISTÓRICO</button>
-  </nav>
+    <nav class="sidebar-nav">
+      <button class="nav-item nav-active" data-page="dashboard">
+        <span class="nav-icon">◆</span> Dashboard
+      </button>
+      <button class="nav-item" data-page="schedule">
+        <span class="nav-icon">◷</span> Cronograma
+      </button>
+      <button class="nav-item" data-page="topics">
+        <span class="nav-icon">⊞</span> Banco
+      </button>
+      <button class="nav-item" data-page="history">
+        <span class="nav-icon">◎</span> Histórico
+      </button>
+    </nav>
 
-  <!-- ── Páginas ───────────────────────────────────────────────────────── -->
-  <main>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" id="sidebar-user"></div>
+    </div>
+  </aside>
 
-    <!-- DASHBOARD -->
-    <section id="pg-dashboard" class="page">
-      <div id="dash-stats" class="dash-stats"></div>
+  <!-- ── Conteúdo principal ─────────────────────────────────────────────── -->
+  <div class="main-wrap">
 
-      <div class="dash-section">
-        <h3 class="section-title">REVISAR AGORA</h3>
-        <div id="dash-urgent"></div>
-      </div>
+    <!-- Mobile header -->
+    <div class="mobile-header">
+      <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+      <span class="mobile-brand">MEDREV</span>
+      <div id="mobile-stats" class="mobile-stats"></div>
+    </div>
 
-      <div class="dash-grid">
-        <div class="dash-section">
-          <h3 class="section-title">ATIVIDADE — ÚLTIMOS 7 DIAS</h3>
-          <div id="dash-chart" class="chart-wrap"></div>
+    <main class="main">
+
+      <!-- ── DASHBOARD ──────────────────────────────────────────────────── -->
+      <section id="pg-dashboard" class="page">
+        <div id="greeting" class="greeting"></div>
+
+        <div id="dash-stats" class="stat-row"></div>
+
+        <div class="dash-grid-2">
+          <div>
+            <div class="section-label">AGENDA DE HOJE</div>
+            <div id="schedule-widget"></div>
+          </div>
+          <div>
+            <div class="section-label">FILA DE PRIORIDADE</div>
+            <div id="priority-queue"></div>
+          </div>
         </div>
-        <div class="dash-section">
-          <h3 class="section-title">DISTRIBUIÇÃO DE RETENÇÃO</h3>
-          <div id="dash-dist"></div>
-        </div>
-      </div>
-    </section>
 
-    <!-- TÓPICOS -->
-    <section id="pg-topics" class="page hidden">
-      <div class="toolbar">
-        <button id="btn-new" class="btn-primary">+ NOVO TÓPICO</button>
-        <input id="search-input" type="search" class="search-input" placeholder="Buscar tópico..." autocomplete="off">
-        <div class="sort-row">
-          <span class="sort-label">ORDENAR</span>
-          <select id="sort-select" aria-label="Ordenar por">
+        <div class="section-label">ATIVIDADE — 7 DIAS</div>
+        <div id="dash-chart" class="chart-wrap"></div>
+
+        <div class="section-label">DISTRIBUIÇÃO DE RETENÇÃO</div>
+        <div id="dash-dist"></div>
+      </section>
+
+      <!-- ── CRONOGRAMA ─────────────────────────────────────────────────── -->
+      <section id="pg-schedule" class="page hidden">
+        <div class="page-head">
+          <div>
+            <h2 class="page-title">Cronograma</h2>
+            <p class="page-sub">Gerencie seus blocos de estudo diários</p>
+          </div>
+          <button id="btn-add-block" class="btn-primary">+ Adicionar Bloco</button>
+        </div>
+        <div id="schedule-list"></div>
+        <div id="schedule-empty" class="empty hidden">
+          <p>NENHUM BLOCO CADASTRADO</p>
+          <p class="empty-sub">Clique em "+ Adicionar Bloco" para organizar seus estudos.</p>
+        </div>
+      </section>
+
+      <!-- ── BANCO DE TÓPICOS ───────────────────────────────────────────── -->
+      <section id="pg-topics" class="page hidden">
+        <div class="page-head">
+          <div>
+            <h2 class="page-title">Banco de Tópicos</h2>
+            <p class="page-sub" id="topics-count">0 tópicos</p>
+          </div>
+          <button id="btn-new" class="btn-primary">+ Novo Tópico</button>
+        </div>
+        <div class="filter-bar">
+          <input id="search-input" type="search" class="filter-input" placeholder="Buscar tópico..." autocomplete="off">
+          <select id="filter-area" class="filter-select">
+            <option value="">Todas as áreas</option>
+          </select>
+          <select id="sort-select" class="filter-select">
             <option value="due">Revisão</option>
+            <option value="score">Prioridade</option>
             <option value="name">Nome</option>
             <option value="relevance">Relevância</option>
             <option value="retention">Retenção</option>
           </select>
         </div>
-      </div>
-      <div id="topic-list" role="list"></div>
-      <div id="empty-state" class="empty hidden">
-        <p>SEM TÓPICOS CADASTRADOS</p>
-        <p class="empty-sub">Clique em "+ NOVO TÓPICO" para começar.</p>
-      </div>
-    </section>
+        <div id="topic-list" role="list"></div>
+        <div id="empty-state" class="empty hidden">
+          <p>SEM TÓPICOS CADASTRADOS</p>
+          <p class="empty-sub">Clique em "+ Novo Tópico" para começar.</p>
+        </div>
+      </section>
 
-    <!-- HISTÓRICO -->
-    <section id="pg-history" class="page hidden">
-      <div id="history-list"></div>
-      <div id="history-empty" class="empty hidden">
-        <p>NENHUMA SESSÃO REGISTRADA</p>
-        <p class="empty-sub">Conclua uma sessão de estudo para ver o histórico.</p>
-      </div>
-    </section>
+      <!-- ── HISTÓRICO ──────────────────────────────────────────────────── -->
+      <section id="pg-history" class="page hidden">
+        <div class="page-head">
+          <div>
+            <h2 class="page-title">Histórico de Revisões</h2>
+            <p class="page-sub" id="history-count">0 sessões</p>
+          </div>
+        </div>
+        <div id="history-list"></div>
+        <div id="history-empty" class="empty hidden">
+          <p>NENHUMA SESSÃO REGISTRADA</p>
+          <p class="empty-sub">Conclua uma sessão de estudo para ver o histórico.</p>
+        </div>
+      </section>
 
-  </main>
+    </main>
+  </div>
+
+  <!-- ── Modal: Onboarding (primeiro acesso) ───────────────────────────── -->
+  <div id="modal-onboarding" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-box modal-sm">
+      <div class="modal-head">
+        <h2>Bem-vindo ao MedRev</h2>
+      </div>
+      <form id="form-onboarding">
+        <p class="onboarding-text">Como você quer ser chamado?</p>
+        <div class="field">
+          <label for="in-username">SEU NOME</label>
+          <input id="in-username" type="text" placeholder="ex: João" required maxlength="40" autocomplete="off">
+        </div>
+        <div class="modal-foot">
+          <button type="submit" class="btn-primary" style="width:100%">COMEÇAR</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- ── Modal: Novo Tópico ─────────────────────────────────────────────── -->
-  <div id="modal-new" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-new-title">
+  <div id="modal-new" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-box">
       <div class="modal-head">
-        <h2 id="modal-new-title">NOVO TÓPICO</h2>
-        <button class="btn-x" data-close="modal-new" aria-label="Fechar">✕</button>
+        <h2>Novo Tópico</h2>
+        <button class="btn-x" data-close="modal-new">✕</button>
       </div>
       <form id="form-new" novalidate>
         <div class="field">
           <label for="in-name">NOME DO TÓPICO</label>
-          <input id="in-name" type="text" autocomplete="off" placeholder="ex: Sepse Pediátrica" required maxlength="120">
+          <input id="in-name" type="text" autocomplete="off" placeholder="ex: IAM e Síndromes Coronarianas" required maxlength="120">
           <span class="field-error hidden" id="err-name">Campo obrigatório.</span>
         </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="in-subcategory">ESPECIALIDADE</label>
+            <select id="in-subcategory" class="filter-select" style="width:100%"></select>
+          </div>
+          <div class="field">
+            <label for="in-weight">PESO HIGH-YIELD — <strong id="weight-val">5</strong>/10</label>
+            <input id="in-weight" type="range" min="1" max="10" value="5" step="1">
+            <div class="range-labels"><span>Baixo</span><span>Alto</span></div>
+          </div>
+        </div>
+
         <div class="field">
           <label for="in-rel">RELEVÂNCIA PARA A PROVA — <strong id="rel-val">3</strong>/5</label>
           <input id="in-rel" type="range" min="1" max="5" value="3" step="1">
           <div class="range-labels"><span>Baixa</span><span>Alta</span></div>
         </div>
+
         <div class="field field-info">
           <span class="info-label">RETENÇÃO ALVO (R★)</span>
           <span class="info-value" id="r-target-val">90.0%</span>
         </div>
+
         <div class="modal-foot">
           <button type="submit" class="btn-primary">CADASTRAR</button>
           <button type="button" class="btn-ghost" data-close="modal-new">CANCELAR</button>
@@ -113,14 +204,14 @@
   </div>
 
   <!-- ── Modal: Sessão de Estudo ────────────────────────────────────────── -->
-  <div id="modal-study" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="study-name">
+  <div id="modal-study" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-box">
       <div class="modal-head">
         <h2 id="study-name">—</h2>
-        <button class="btn-x" data-close="modal-study" aria-label="Fechar">✕</button>
+        <button class="btn-x" data-close="modal-study">✕</button>
       </div>
 
-      <!-- Painel de entrada -->
+      <!-- Painel 1: Entrada de dados -->
       <div id="pane-input">
         <div id="study-state" class="state-bar"></div>
         <form id="form-study" novalidate>
@@ -136,7 +227,7 @@
           </div>
           <div class="field">
             <label>ACURÁCIA BRUTA (A)</label>
-            <div class="acc-track" role="progressbar" aria-label="Acurácia bruta">
+            <div class="acc-track">
               <div id="acc-bar" class="acc-fill"></div>
               <span id="acc-pct" class="acc-label">—</span>
             </div>
@@ -152,7 +243,38 @@
         </form>
       </div>
 
-      <!-- Painel de resultado -->
+      <!-- Painel 2: Taxonomia Metacognitiva do Erro (somente rating=1) -->
+      <div id="pane-error-taxonomy" class="hidden">
+        <div class="taxonomy-header">
+          <p class="taxonomy-title">Por que você errou?</p>
+          <p class="taxonomy-sub">Selecione o tipo de erro para continuar. Isso alimenta seu diagnóstico de aprendizagem.</p>
+        </div>
+        <div class="taxonomy-options">
+          <button class="taxonomy-btn" data-error="knowledge">
+            <span class="taxonomy-icon">🧠</span>
+            <div class="taxonomy-text">
+              <strong>Falta de Conhecimento</strong>
+              <span>Não sabia o conteúdo teórico</span>
+            </div>
+          </button>
+          <button class="taxonomy-btn" data-error="confusion">
+            <span class="taxonomy-icon">😵</span>
+            <div class="taxonomy-text">
+              <strong>Confusão / Distração</strong>
+              <span>Sabia, mas errou por descuido</span>
+            </div>
+          </button>
+          <button class="taxonomy-btn" data-error="clinical">
+            <span class="taxonomy-icon">🏥</span>
+            <div class="taxonomy-text">
+              <strong>Erro de Aplicação Clínica</strong>
+              <span>Sabia o conteúdo, errou na aplicação</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Painel 3: Resultado -->
       <div id="pane-result" class="hidden">
         <div id="res-rating"></div>
         <div class="res-grid" id="res-grid"></div>
@@ -165,8 +287,45 @@
     </div>
   </div>
 
-  <div id="overlay" class="overlay hidden" aria-hidden="true"></div>
+  <!-- ── Modal: Adicionar Bloco de Agenda ──────────────────────────────── -->
+  <div id="modal-block" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-box modal-sm">
+      <div class="modal-head">
+        <h2>Adicionar Bloco</h2>
+        <button class="btn-x" data-close="modal-block">✕</button>
+      </div>
+      <form id="form-block" novalidate>
+        <div class="field-row">
+          <div class="field">
+            <label for="in-block-date">DATA</label>
+            <input id="in-block-date" type="date" required>
+          </div>
+          <div class="field">
+            <label for="in-block-time">HORÁRIO</label>
+            <input id="in-block-time" type="time" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="in-block-title">TÍTULO</label>
+          <input id="in-block-title" type="text" placeholder="ex: Bloco 1: Ginecologia" required maxlength="80">
+        </div>
+        <div class="field">
+          <label for="in-block-type">TIPO</label>
+          <select id="in-block-type" class="filter-select" style="width:100%">
+            <option value="study">Estudo Ativo</option>
+            <option value="review">Revisão FSRS</option>
+            <option value="simulation">Simulado</option>
+          </select>
+        </div>
+        <div class="modal-foot">
+          <button type="submit" class="btn-primary">ADICIONAR</button>
+          <button type="button" class="btn-ghost" data-close="modal-block">CANCELAR</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
+  <div id="overlay" class="overlay hidden"></div>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
