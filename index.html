@@ -39,7 +39,7 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div class="sidebar-user" id="sidebar-user"></div>
+      <button class="sidebar-user" id="sidebar-user" data-page="settings" title="Ajustes do perfil"></button>
     </div>
   </aside>
 
@@ -156,9 +156,13 @@
           </div>
         </div>
 
-        <div class="section-label">EXAME ALVO</div>
+        <div class="section-label">PERFIL</div>
         <div class="settings-card">
           <div class="field" style="max-width:320px">
+            <label for="in-settings-name">SEU NOME</label>
+            <input id="in-settings-name" type="text" placeholder="ex: João" maxlength="40" autocomplete="off">
+          </div>
+          <div class="field" style="max-width:320px;margin-top:1rem">
             <label for="in-exam-date">DATA DA PROVA</label>
             <input id="in-exam-date" type="date">
             <span style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;display:block">
@@ -190,16 +194,24 @@
             </label>
           </div>
         </div>
+
+        <div class="section-label" style="margin-top:1.75rem">FILA DE PRIORIDADE</div>
+        <div class="settings-card">
+          <div class="backup-row">
+            <div class="backup-info">
+              <strong class="backup-title">Otimizar Fila</strong>
+              <p class="backup-desc">Recalcula as prioridades da fila de revisão. Útil se ficou dias sem acessar o app.</p>
+            </div>
+            <button id="btn-optimize" class="btn-primary">↻ OTIMIZAR</button>
+          </div>
+        </div>
       </section>
 
     </main>
   </div>
 
-  <!-- ── Botão fixo: Otimizar Fila ──────────────────────────────────────── -->
-  <button id="btn-optimize" class="btn-optimize" title="Recalcular fila de prioridades agora">↻ Otimizar Fila</button>
-
   <!-- ── Modal: Onboarding (primeiro acesso) ───────────────────────────── -->
-  <div id="modal-onboarding" class="modal" role="dialog" aria-modal="true">
+  <div id="modal-onboarding" class="modal hidden" role="dialog" aria-modal="true">
     <div class="modal-box modal-sm">
       <div class="modal-head">
         <h2>Bem-vindo ao MedRev</h2>

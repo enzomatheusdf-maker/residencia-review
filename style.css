@@ -137,7 +137,10 @@ input, select, textarea { font-family: var(--font); }
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius-sm);
   background: var(--bg-input);
+  cursor: pointer; border: none; width: 100%; text-align: left;
+  transition: background 0.15s;
 }
+.sidebar-user:hover { background: var(--bg-hover); }
 .user-avatar {
   width: 32px; height: 32px; border-radius: 50%;
   background: var(--accent); color: #fff;
@@ -780,19 +783,6 @@ input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--accent);
 .backup-title { font-size: 0.88rem; font-weight: 600; display: block; margin-bottom: 0.25rem; }
 .backup-desc  { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; }
 
-/* ── Optimize Button (fixed) ───────────────────────────────────────────────── */
-.btn-optimize {
-  position: fixed; top: 1rem; right: 1.5rem; z-index: 50;
-  background: var(--bg-card); border: var(--border);
-  color: var(--accent); font-size: 0.72rem; font-weight: 600;
-  padding: 0.5rem 0.9rem; border-radius: var(--radius-sm);
-  cursor: pointer; font-family: var(--font); letter-spacing: 0.04em;
-  transition: background 0.15s, border-color 0.15s;
-}
-.btn-optimize:hover { background: var(--accent-dim); border-color: var(--accent); }
-@media (max-width: 768px) {
-  .btn-optimize { top: 0.5rem; right: 0.5rem; font-size: 0.65rem; padding: 0.3rem 0.6rem; }
-}
 
 /* ── Daily Goal ────────────────────────────────────────────────────────────── */
 .daily-goal-card {

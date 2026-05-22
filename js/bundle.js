@@ -930,7 +930,7 @@ function bindEvents() {
     if (['dashboard','schedule','topics','history','settings'].includes(page)) {
       state.activePage = page;
       switchPage(page);
-      if (page === 'settings') renderSettingsPage(state.user);
+      if (page === 'settings') populateSettings();
       closeSidebarOnMobile();
     }
   });
@@ -1043,11 +1043,15 @@ function bindEvents() {
 
   // ── Ajustes ──────────────────────────────────────────────────────────────────
   document.getElementById('btn-save-settings').addEventListener('click', () => {
+    const name     = document.getElementById('in-settings-name').value.trim();
     const examDate = document.getElementById('in-exam-date').value || null;
-    state.user     = { ...state.user, examDate };
+    if (name) state.user.name = name;
+    state.user = { ...state.user, examDate };
     saveUser(state.user);
+    renderSidebarUser(state.user);
     renderExamCountdown(state.user);
     renderDashStats(state.topics, state.user);
+    renderGreeting(state.user, state.topics);
     showToast('Ajustes salvos!');
   });
 
@@ -1063,7 +1067,7 @@ function bindEvents() {
       state.topics   = loadTopics();
       state.schedule = loadSchedule();
       state.user     = loadUser();
-      renderSettingsPage(state.user);
+      populateSettings();
       refresh();
     });
     e.target.value = '';
@@ -1071,6 +1075,7 @@ function bindEvents() {
 
   // ── Otimizar fila ─────────────────────────────────────────────────────────────
   document.getElementById('btn-optimize').addEventListener('click', () => {
+    state.dailyQueue = getDailyQueue(state.topics);
     refresh();
     showToast('Fila de prioridades recalculada!');
   });
@@ -1390,26 +1395,11 @@ function optimizeFSRS() {
   showToast('Fila de prioridades otimizada!');
 }
 
-function openExamDateModal() {
-  const modal = document.getElementById('modal-exam-date');
-  const inp = document.getElementById('in-exam-date');
-  if (inp && state.user.examDate) inp.value = state.user.examDate;
-  openModal('modal-exam-date');
-  inp?.focus();
-}
-
-function submitExamDate() {
-  const dateStr = document.getElementById('in-exam-date').value;
-  if (!dateStr) {
-    alert('Digite uma data válida.');
-    return;
-  }
-  state.user.examDate = dateStr;
-  saveUser(state.user);
-  closeModal('modal-exam-date');
-  renderExamCountdown(state.user);
-  renderGreeting(state.user, state.topics);
-  showToast('Data do exame atualizada!');
+function populateSettings() {
+  const nameEl = document.getElementById('in-settings-name');
+  const dateEl = document.getElementById('in-exam-date');
+  if (nameEl) nameEl.value = state.user.name || '';
+  if (dateEl) dateEl.value = state.user.examDate || '';
 }
 
 function showToast(msg) {
@@ -1425,88 +1415,5 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Settings Page Render
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function renderSettingsPage() {
-  const el = document.getElementById('pg-settings');
-  if (!el) return;
-
-  el.innerHTML = `
-    <div class="page-head">
-      <h2 class="page-title">Ajustes</h2>
-      <p class="page-sub">Configure seu perfil e dados</p>
-    </div>
-
-    <div class="settings-section">
-      <h3 class="settings-heading">Perfil</h3>
-      <div class="settings-item">
-        <label>Nome</label>
-        <input type="text" id="in-settings-name" class="input" value="${state.user.name || ''}" placeholder="Seu nome">
-        <button class="btn-secondary btn-sm" onclick="saveProfiling()">Salvar Nome</button>
-      </div>
-
-      <div class="settings-item">
-        <label>Data do Exame Alvo</label>
-        <div style="display:flex;gap:0.75rem">
-          <input type="date" id="in-exam-date-display" class="input" value="${state.user.examDate || ''}" placeholder="YYYY-MM-DD">
-          <button class="btn-secondary btn-sm" onclick="submitExamDate()">Definir</button>
-        </div>
-        <p class="settings-hint">Será exibido um contador regressivo no dashboard</p>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <h3 class="settings-heading">Backup & Dados</h3>
-      <div class="settings-item">
-        <p class="settings-hint">Exporte seus dados em JSON para backup local offline</p>
-        <button class="btn-secondary" onclick="exportData()">📥 Exportar Dados (JSON)</button>
-      </div>
-      <div class="settings-item">
-        <p class="settings-hint">Importe dados de um backup anterior para restaurar</p>
-        <input type="file" id="import-file" class="input" accept=".json" style="display:none">
-        <button class="btn-secondary" onclick="document.getElementById('import-file').click()">📤 Importar Dados (JSON)</button>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <h3 class="settings-heading">Informações</h3>
-      <div class="settings-info">
-        <p><strong>Versão:</strong> 2.0 (FSRS-4.5 + Métricas)</p>
-        <p><strong>Dados:</strong> Armazenados localmente no navegador</p>
-        <p><strong>Backup:</strong> Manual em JSON, sem sincronização em nuvem</p>
-      </div>
-    </div>`;
-
-  // Bind import handler
-  document.getElementById('import-file').addEventListener('change', e => {
-    if (e.target.files[0]) importData(e.target.files[0], () => {
-      state.topics = loadTopics();
-      state.schedule = loadSchedule();
-      state.user = loadUser();
-      state.dailyQueue = getDailyQueue(state.topics);
-      refresh();
-    });
-  });
-
-  // Sincroniza campo de data do exame com o state
-  const dateInput = document.getElementById('in-exam-date-display');
-  if (dateInput) {
-    dateInput.addEventListener('change', e => {
-      document.getElementById('in-exam-date').value = e.target.value;
-    });
-  }
-}
-
-function saveProfiling() {
-  const name = document.getElementById('in-settings-name').value.trim();
-  if (!name) return;
-  state.user.name = name;
-  saveUser(state.user);
-  renderSidebarUser(state.user);
-  renderGreeting(state.user, state.topics);
-  showToast('Perfil atualizado!');
-}
 
 document.addEventListener('DOMContentLoaded', init);
