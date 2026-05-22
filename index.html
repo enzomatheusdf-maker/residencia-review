@@ -33,6 +33,9 @@
       <button class="nav-item" data-page="history">
         <span class="nav-icon">◎</span> Histórico
       </button>
+      <button class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙</span> Ajustes
+      </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -54,9 +57,13 @@
 
       <!-- ── DASHBOARD ──────────────────────────────────────────────────── -->
       <section id="pg-dashboard" class="page">
+
         <div id="greeting" class="greeting"></div>
+        <div id="exam-countdown"></div>
 
         <div id="dash-stats" class="stat-row"></div>
+
+        <div id="daily-goal"></div>
 
         <div class="dash-grid-2">
           <div>
@@ -74,6 +81,10 @@
 
         <div class="section-label">DISTRIBUIÇÃO DE RETENÇÃO</div>
         <div id="dash-dist"></div>
+
+        <div class="section-label" style="margin-top:1.75rem">METRIFIQUE SEU DESEMPENHO</div>
+        <div id="perf-table-wrap" class="perf-table-wrap"></div>
+
       </section>
 
       <!-- ── CRONOGRAMA ─────────────────────────────────────────────────── -->
@@ -136,8 +147,56 @@
         </div>
       </section>
 
+      <!-- ── AJUSTES ────────────────────────────────────────────────────── -->
+      <section id="pg-settings" class="page hidden">
+        <div class="page-head">
+          <div>
+            <h2 class="page-title">Ajustes</h2>
+            <p class="page-sub">Configurações e backup de dados</p>
+          </div>
+        </div>
+
+        <div class="section-label">EXAME ALVO</div>
+        <div class="settings-card">
+          <div class="field" style="max-width:320px">
+            <label for="in-exam-date">DATA DA PROVA</label>
+            <input id="in-exam-date" type="date">
+            <span style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;display:block">
+              Ativa o contador regressivo no Dashboard e calibra a Meta de Questões Diária.
+            </span>
+          </div>
+          <div style="margin-top:1.25rem">
+            <button id="btn-save-settings" class="btn-primary">SALVAR AJUSTES</button>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:1.75rem">BACKUP LOCAL</div>
+        <div class="settings-card">
+          <div class="backup-row">
+            <div class="backup-info">
+              <strong class="backup-title">Exportar Dados (JSON)</strong>
+              <p class="backup-desc">Baixa um arquivo com todos os tópicos, histórico, cronograma e configurações. Use antes de trocar de dispositivo.</p>
+            </div>
+            <button id="btn-export" class="btn-primary">⬇ EXPORTAR</button>
+          </div>
+          <div class="backup-row" style="margin-top:1.25rem;padding-top:1.25rem;border-top:var(--border)">
+            <div class="backup-info">
+              <strong class="backup-title">Importar Dados (JSON)</strong>
+              <p class="backup-desc">Restaura o progresso a partir de um arquivo exportado. Atenção: substitui todos os dados atuais.</p>
+            </div>
+            <label class="btn-ghost" style="cursor:pointer;white-space:nowrap">
+              ⬆ IMPORTAR
+              <input id="in-import" type="file" accept=".json" style="display:none">
+            </label>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
+
+  <!-- ── Botão fixo: Otimizar Fila ──────────────────────────────────────── -->
+  <button id="btn-optimize" class="btn-optimize" title="Recalcular fila de prioridades agora">↻ Otimizar Fila</button>
 
   <!-- ── Modal: Onboarding (primeiro acesso) ───────────────────────────── -->
   <div id="modal-onboarding" class="modal" role="dialog" aria-modal="true">
@@ -174,20 +233,27 @@
 
         <div class="field-row">
           <div class="field">
-            <label for="in-subcategory">ESPECIALIDADE</label>
-            <select id="in-subcategory" class="filter-select" style="width:100%"></select>
+            <label for="in-area">GRANDE ÁREA *</label>
+            <select id="in-area" class="filter-select" style="width:100%" required></select>
+            <span class="field-error hidden" id="err-area">Selecione uma área.</span>
           </div>
+          <div class="field">
+            <label for="in-subcategory">ESPECIALIDADE *</label>
+            <select id="in-subcategory" class="filter-select" style="width:100%" required></select>
+          </div>
+        </div>
+
+        <div class="field-row">
           <div class="field">
             <label for="in-weight">PESO HIGH-YIELD — <strong id="weight-val">5</strong>/10</label>
             <input id="in-weight" type="range" min="1" max="10" value="5" step="1">
             <div class="range-labels"><span>Baixo</span><span>Alto</span></div>
           </div>
-        </div>
-
-        <div class="field">
-          <label for="in-rel">RELEVÂNCIA PARA A PROVA — <strong id="rel-val">3</strong>/5</label>
-          <input id="in-rel" type="range" min="1" max="5" value="3" step="1">
-          <div class="range-labels"><span>Baixa</span><span>Alta</span></div>
+          <div class="field">
+            <label for="in-rel">RELEVÂNCIA — <strong id="rel-val">3</strong>/5</label>
+            <input id="in-rel" type="range" min="1" max="5" value="3" step="1">
+            <div class="range-labels"><span>Baixa</span><span>Alta</span></div>
+          </div>
         </div>
 
         <div class="field field-info">
@@ -247,7 +313,7 @@
       <div id="pane-error-taxonomy" class="hidden">
         <div class="taxonomy-header">
           <p class="taxonomy-title">Por que você errou?</p>
-          <p class="taxonomy-sub">Selecione o tipo de erro para continuar. Isso alimenta seu diagnóstico de aprendizagem.</p>
+          <p class="taxonomy-sub">Selecione o tipo de erro para continuar.</p>
         </div>
         <div class="taxonomy-options">
           <button class="taxonomy-btn" data-error="knowledge">
