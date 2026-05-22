@@ -1356,11 +1356,11 @@ function bindEvents() {
     refresh();
   });
 
-  // ── New Topic ────────────────────────────────────────────────────────────────
-  document.getElementById('btn-new').addEventListener('click', () => {
+  // ── New Topic (Banco page button + Dashboard quick button) ───────────────────
+  function openNewTopicModal() {
     document.getElementById('form-new').reset();
-    document.getElementById('rel-val').textContent     = '3';
-    document.getElementById('weight-val').textContent  = '5';
+    document.getElementById('rel-val').textContent      = '3';
+    document.getElementById('weight-val').textContent   = '5';
     document.getElementById('r-target-val').textContent = '90.0%';
     populateAreasDropdown('in-area');
     populateSpecialtiesByArea('', 'in-subcategory');
@@ -1368,7 +1368,9 @@ function bindEvents() {
     document.getElementById('err-name')?.classList.add('hidden');
     openModal('modal-new');
     document.getElementById('in-name')?.focus();
-  });
+  }
+  document.getElementById('btn-new').addEventListener('click', openNewTopicModal);
+  document.getElementById('btn-quick-topic')?.addEventListener('click', openNewTopicModal);
   document.getElementById('in-area').addEventListener('change', e => populateSpecialtiesByArea(e.target.value, 'in-subcategory'));
   document.getElementById('in-rel').addEventListener('input', e => {
     document.getElementById('rel-val').textContent     = e.target.value;
