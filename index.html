@@ -4,41 +4,82 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MedRev — Revisão para Residência</title>
-  <meta name="description" content="Sistema de revisão espaçada para residência médica com algoritmo FSRS-4.5 adaptado por volume e relevância.">
+  <meta name="description" content="Sistema de revisão espaçada FSRS para residência médica.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <!-- ── Header ─────────────────────────────────────────────────────────── -->
-  <header>
+  <header id="app-header">
     <div class="brand">
       <span class="brand-name">MEDREV</span>
       <span class="brand-sub">FSRS-4.5 · Residência Médica</span>
     </div>
-    <div class="header-stats" id="header-stats"></div>
+    <div id="header-stats" class="header-stats"></div>
   </header>
 
-  <!-- ── Conteúdo principal ─────────────────────────────────────────────── -->
+  <!-- ── Navegação por abas ─────────────────────────────────────────────── -->
+  <nav class="tab-nav" role="tablist">
+    <button class="tab-btn tab-active" data-page="dashboard" role="tab">DASHBOARD</button>
+    <button class="tab-btn" data-page="topics" role="tab">TÓPICOS</button>
+    <button class="tab-btn" data-page="history" role="tab">HISTÓRICO</button>
+  </nav>
+
+  <!-- ── Páginas ───────────────────────────────────────────────────────── -->
   <main>
-    <div class="toolbar">
-      <button id="btn-new" class="btn-primary">+ NOVO TÓPICO</button>
-      <div class="sort-row">
-        <span>ORDENAR</span>
-        <select id="sort-select" aria-label="Ordenar tópicos por">
-          <option value="due">Revisão</option>
-          <option value="name">Nome</option>
-          <option value="relevance">Relevância</option>
-          <option value="retention">Retenção</option>
-        </select>
+
+    <!-- DASHBOARD -->
+    <section id="pg-dashboard" class="page">
+      <div id="dash-stats" class="dash-stats"></div>
+
+      <div class="dash-section">
+        <h3 class="section-title">REVISAR AGORA</h3>
+        <div id="dash-urgent"></div>
       </div>
-    </div>
 
-    <div id="topic-list" role="list"></div>
+      <div class="dash-grid">
+        <div class="dash-section">
+          <h3 class="section-title">ATIVIDADE — ÚLTIMOS 7 DIAS</h3>
+          <div id="dash-chart" class="chart-wrap"></div>
+        </div>
+        <div class="dash-section">
+          <h3 class="section-title">DISTRIBUIÇÃO DE RETENÇÃO</h3>
+          <div id="dash-dist"></div>
+        </div>
+      </div>
+    </section>
 
-    <div id="empty-state" class="empty hidden" aria-live="polite">
-      <p>SEM TÓPICOS CADASTRADOS</p>
-      <p class="empty-sub">Clique em "+ NOVO TÓPICO" para começar.</p>
-    </div>
+    <!-- TÓPICOS -->
+    <section id="pg-topics" class="page hidden">
+      <div class="toolbar">
+        <button id="btn-new" class="btn-primary">+ NOVO TÓPICO</button>
+        <input id="search-input" type="search" class="search-input" placeholder="Buscar tópico..." autocomplete="off">
+        <div class="sort-row">
+          <span class="sort-label">ORDENAR</span>
+          <select id="sort-select" aria-label="Ordenar por">
+            <option value="due">Revisão</option>
+            <option value="name">Nome</option>
+            <option value="relevance">Relevância</option>
+            <option value="retention">Retenção</option>
+          </select>
+        </div>
+      </div>
+      <div id="topic-list" role="list"></div>
+      <div id="empty-state" class="empty hidden">
+        <p>SEM TÓPICOS CADASTRADOS</p>
+        <p class="empty-sub">Clique em "+ NOVO TÓPICO" para começar.</p>
+      </div>
+    </section>
+
+    <!-- HISTÓRICO -->
+    <section id="pg-history" class="page hidden">
+      <div id="history-list"></div>
+      <div id="history-empty" class="empty hidden">
+        <p>NENHUMA SESSÃO REGISTRADA</p>
+        <p class="empty-sub">Conclua uma sessão de estudo para ver o histórico.</p>
+      </div>
+    </section>
+
   </main>
 
   <!-- ── Modal: Novo Tópico ─────────────────────────────────────────────── -->
@@ -51,22 +92,18 @@
       <form id="form-new" novalidate>
         <div class="field">
           <label for="in-name">NOME DO TÓPICO</label>
-          <input id="in-name" type="text" autocomplete="off"
-                 placeholder="ex: Sepse Pediátrica" required maxlength="120">
+          <input id="in-name" type="text" autocomplete="off" placeholder="ex: Sepse Pediátrica" required maxlength="120">
           <span class="field-error hidden" id="err-name">Campo obrigatório.</span>
         </div>
-
         <div class="field">
           <label for="in-rel">RELEVÂNCIA PARA A PROVA — <strong id="rel-val">3</strong>/5</label>
           <input id="in-rel" type="range" min="1" max="5" value="3" step="1">
           <div class="range-labels"><span>Baixa</span><span>Alta</span></div>
         </div>
-
         <div class="field field-info">
           <span class="info-label">RETENÇÃO ALVO (R★)</span>
           <span class="info-value" id="r-target-val">90.0%</span>
         </div>
-
         <div class="modal-foot">
           <button type="submit" class="btn-primary">CADASTRAR</button>
           <button type="button" class="btn-ghost" data-close="modal-new">CANCELAR</button>
@@ -85,8 +122,7 @@
 
       <!-- Painel de entrada -->
       <div id="pane-input">
-        <div id="study-state" class="state-bar" aria-label="Estado FSRS atual"></div>
-
+        <div id="study-state" class="state-bar"></div>
         <form id="form-study" novalidate>
           <div class="field-row">
             <div class="field">
@@ -98,7 +134,6 @@
               <input id="in-hits" type="number" min="0" placeholder="17" required>
             </div>
           </div>
-
           <div class="field">
             <label>ACURÁCIA BRUTA (A)</label>
             <div class="acc-track" role="progressbar" aria-label="Acurácia bruta">
@@ -106,14 +141,11 @@
               <span id="acc-pct" class="acc-label">—</span>
             </div>
           </div>
-
           <div class="field field-info" id="e-preview-row" style="display:none">
             <span class="info-label">ACURÁCIA EFETIVA (E) · RATING FSRS</span>
             <span class="info-value" id="e-preview">—</span>
           </div>
-
           <span class="field-error hidden" id="err-study"></span>
-
           <div class="modal-foot">
             <button type="submit" class="btn-primary">CALCULAR</button>
           </div>
@@ -122,7 +154,7 @@
 
       <!-- Painel de resultado -->
       <div id="pane-result" class="hidden">
-        <div id="res-rating" aria-live="polite"></div>
+        <div id="res-rating"></div>
         <div class="res-grid" id="res-grid"></div>
         <div id="res-next"></div>
         <div class="modal-foot">
@@ -133,7 +165,6 @@
     </div>
   </div>
 
-  <!-- ── Overlay ────────────────────────────────────────────────────────── -->
   <div id="overlay" class="overlay hidden" aria-hidden="true"></div>
 
   <script type="module" src="js/app.js"></script>
