@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedRev — Revisão para Residência</title>
+  <meta name="description" content="Sistema de revisão espaçada para residência médica com algoritmo FSRS-4.5 adaptado por volume e relevância.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <header>
+    <div class="brand">
+      <span class="brand-name">MEDREV</span>
+      <span class="brand-sub">FSRS-4.5 · Residência Médica</span>
+    </div>
+    <div class="header-stats" id="header-stats"></div>
+  </header>
+
+  <!-- ── Conteúdo principal ─────────────────────────────────────────────── -->
+  <main>
+    <div class="toolbar">
+      <button id="btn-new" class="btn-primary">+ NOVO TÓPICO</button>
+      <div class="sort-row">
+        <span>ORDENAR</span>
+        <select id="sort-select" aria-label="Ordenar tópicos por">
+          <option value="due">Revisão</option>
+          <option value="name">Nome</option>
+          <option value="relevance">Relevância</option>
+          <option value="retention">Retenção</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="topic-list" role="list"></div>
+
+    <div id="empty-state" class="empty hidden" aria-live="polite">
+      <p>SEM TÓPICOS CADASTRADOS</p>
+      <p class="empty-sub">Clique em "+ NOVO TÓPICO" para começar.</p>
+    </div>
+  </main>
+
+  <!-- ── Modal: Novo Tópico ─────────────────────────────────────────────── -->
+  <div id="modal-new" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-new-title">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2 id="modal-new-title">NOVO TÓPICO</h2>
+        <button class="btn-x" data-close="modal-new" aria-label="Fechar">✕</button>
+      </div>
+      <form id="form-new" novalidate>
+        <div class="field">
+          <label for="in-name">NOME DO TÓPICO</label>
+          <input id="in-name" type="text" autocomplete="off"
+                 placeholder="ex: Sepse Pediátrica" required maxlength="120">
+          <span class="field-error hidden" id="err-name">Campo obrigatório.</span>
+        </div>
+
+        <div class="field">
+          <label for="in-rel">RELEVÂNCIA PARA A PROVA — <strong id="rel-val">3</strong>/5</label>
+          <input id="in-rel" type="range" min="1" max="5" value="3" step="1">
+          <div class="range-labels"><span>Baixa</span><span>Alta</span></div>
+        </div>
+
+        <div class="field field-info">
+          <span class="info-label">RETENÇÃO ALVO (R★)</span>
+          <span class="info-value" id="r-target-val">90.0%</span>
+        </div>
+
+        <div class="modal-foot">
+          <button type="submit" class="btn-primary">CADASTRAR</button>
+          <button type="button" class="btn-ghost" data-close="modal-new">CANCELAR</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Modal: Sessão de Estudo ────────────────────────────────────────── -->
+  <div id="modal-study" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="study-name">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2 id="study-name">—</h2>
+        <button class="btn-x" data-close="modal-study" aria-label="Fechar">✕</button>
+      </div>
+
+      <!-- Painel de entrada -->
+      <div id="pane-input">
+        <div id="study-state" class="state-bar" aria-label="Estado FSRS atual"></div>
+
+        <form id="form-study" novalidate>
+          <div class="field-row">
+            <div class="field">
+              <label for="in-q">QUESTÕES RESPONDIDAS</label>
+              <input id="in-q" type="number" min="1" max="999" placeholder="20" required>
+            </div>
+            <div class="field">
+              <label for="in-hits">ACERTOS</label>
+              <input id="in-hits" type="number" min="0" placeholder="17" required>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>ACURÁCIA BRUTA (A)</label>
+            <div class="acc-track" role="progressbar" aria-label="Acurácia bruta">
+              <div id="acc-bar" class="acc-fill"></div>
+              <span id="acc-pct" class="acc-label">—</span>
+            </div>
+          </div>
+
+          <div class="field field-info" id="e-preview-row" style="display:none">
+            <span class="info-label">ACURÁCIA EFETIVA (E) · RATING FSRS</span>
+            <span class="info-value" id="e-preview">—</span>
+          </div>
+
+          <span class="field-error hidden" id="err-study"></span>
+
+          <div class="modal-foot">
+            <button type="submit" class="btn-primary">CALCULAR</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Painel de resultado -->
+      <div id="pane-result" class="hidden">
+        <div id="res-rating" aria-live="polite"></div>
+        <div class="res-grid" id="res-grid"></div>
+        <div id="res-next"></div>
+        <div class="modal-foot">
+          <button id="btn-confirm" class="btn-primary">CONFIRMAR E SALVAR</button>
+          <button id="btn-redo" class="btn-ghost">REFAZER</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Overlay ────────────────────────────────────────────────────────── -->
+  <div id="overlay" class="overlay hidden" aria-hidden="true"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
