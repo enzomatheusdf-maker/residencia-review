@@ -1300,6 +1300,8 @@ function init() {
   if (!state.user.name || !state.user.onboarded) {
     openModal('modal-onboarding');
     document.getElementById('in-username')?.focus();
+  } else {
+    closeModal('modal-onboarding');
   }
 }
 
